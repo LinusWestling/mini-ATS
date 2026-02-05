@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mini-ATS 🚀
 
-## Getting Started
+Mini-ATS is a modern, client-heavy SaaS application for Applicant Tracking. Built with Next.js 16 and Supabase, it provides a seamless experience for recruiters to manage job postings and candidates, while offering a smooth application flow for job seekers.
 
-First, run the development server:
+## ✨ Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### 👤 For Candidates
+- **Public Job Board:** View all active job listings from various companies.
+- **Easy Application:** Submit applications with contact details and CV uploads (PDF/Word) without needing an account.
+- **Company Branding:** Job details pages reflect the company's unique branding and "About Us" information.
+
+### 💼 For Recruiters
+- **Self-Service Signup:** Easy registration for new companies.
+- **Job Management:** Create and manage job postings with rich descriptions, location, and salary details.
+- **Dynamic Kanban Board:** Track candidate progress through customizable recruitment steps.
+- **Settings & Customization:**
+  - **Recruitment Steps:** Tailor the hiring pipeline with drag-and-drop step management.
+  - **Company Profile:** Manage branding, logos, and company descriptions.
+  - **Job Templates:** Save time with reusable job description templates.
+
+### 🔑 For Admins
+- **Global Management:** Oversee all companies and users from a central admin panel.
+- **Impersonation Mode:** Seamlessly switch views to see the platform as any specific company for support and management.
+
+### 🎨 Design & UX
+- **Multi-Theme Support:** Choose between three modern themes using OKLCH colors:
+  - **Indigo:** Professional dark mode.
+  - **Bright:** Clean and minimalist light mode.
+  - **Vibrant:** Energetic and colorful.
+- **Responsive Design:** Fully functional across desktop and mobile devices.
+
+## 🛠 Tech Stack
+
+- **Frontend:** Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui.
+- **Backend:** Supabase (PostgreSQL, Auth, Storage).
+- **State Management:** React Query for efficient server state handling.
+- **Theming:** `next-themes` with custom OKLCH color palettes.
+- **Data Security:** Row Level Security (RLS) and Edge Runtime proxies for robust authorization.
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- A Supabase project
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd mini-ats
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Environment Setup
+Create a `.env` file in the root directory:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_publishable_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Database Setup
+1. Run the migration files located in `supabase/migrations/` in your Supabase SQL Editor to set up the schema, RLS policies, and functions.
+2. Ensure you have the `cvs` bucket created in Supabase Storage.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Run the App
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🏗 Architecture
 
-## Learn More
+- **Authentication:** Managed via Supabase SSR with cross-platform session persistence.
+- **Authorization:** Handled through Supabase RLS and `proxy.ts` (Edge Runtime).
+- **CV Storage:** Supabase Storage (`cvs` bucket) for candidate documents.
+- **Application Flow:** Atomic `submit_application` RPC function for RLS-safe public applications.
+- **Admin Impersonation:** Global `AdminProvider` with `localStorage` persistence.
 
-To learn more about Next.js, take a look at the following resources:
+## 📁 Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+app/            # Next.js App Router (Admin, Dashboard, Jobs, etc.)
+components/     # Shared UI and feature-specific components
+src/
+  hooks/        # React Query custom hooks
+  lib/          # Supabase client and shared utilities
+  providers/    # Context providers (Auth, Admin, Query)
+supabase/
+  migrations/   # SQL migration files
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+Built with ❤️ by the Mini-ATS Team.
