@@ -8,6 +8,9 @@ export interface Company {
   created_at: string;
   logo_url?: string | null;
   description?: string | null;
+  auto_reply_enabled?: boolean;
+  auto_reply_subject?: string;
+  auto_reply_body?: string;
 }
 
 export interface RecruitmentStep {
@@ -27,6 +30,11 @@ export interface Profile {
   role: UserRole;
   name: string;
   created_at: string;
+  notification_preferences?: {
+    new_candidate: boolean;
+    status_change: boolean;
+    email_notifications: boolean;
+  };
 }
 
 export interface Job {
@@ -68,4 +76,65 @@ export interface Application {
   created_at: string;
   job?: Job;
   candidate?: Candidate;
+}
+
+export interface Invite {
+  id: string;
+  company_id: string;
+  email: string;
+  token: string;
+  role: UserRole;
+  invited_by: string;
+  created_at: string;
+  expires_at: string;
+  accepted_at: string | null;
+}
+
+export interface Department {
+  id: string;
+  company_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface RecruitmentProcess {
+  id: string;
+  company_id: string;
+  department_id: string | null;
+  role_name: string;
+  description: string | null;
+  kravprofil: any;
+  status: 'draft' | 'active' | 'completed';
+  created_at: string;
+  department?: Department;
+}
+
+export interface InterviewTemplate {
+  id: string;
+  company_id: string;
+  name: string;
+  questions: any[];
+  created_at: string;
+}
+
+export interface Interview {
+  id: string;
+  process_id: string;
+  candidate_id: string;
+  template_id: string | null;
+  title: string;
+  description: string | null;
+  notes: string | null;
+  status: 'planned' | 'completed';
+  created_at: string;
+  candidate?: Candidate;
+}
+
+export interface InterviewFeedback {
+  id: string;
+  interview_id: string;
+  question_text: string;
+  score: number;
+  comment: string | null;
+  created_at: string;
 }

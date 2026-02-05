@@ -14,11 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useState, useEffect } from "react";
 
 export function Navbar() {
+  const [mounted, setMounted] = useState(false);
   const { profile, signOut } = useAuth();
   const { selectedCompanyId, setSelectedCompanyId } = useAdmin();
   const { companies } = useCompanies();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -28,7 +34,7 @@ export function Navbar() {
             <Briefcase className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold tracking-tight">Mini-ATS</span>
           </Link>
-          {profile && (
+          {mounted && profile && (
             <div className="hidden md:flex gap-4">
               <Link
                 href={profile.role === "admin" ? "/admin" : "/dashboard"}
@@ -40,7 +46,7 @@ export function Navbar() {
                 href="/jobs"
                 className="text-sm font-medium transition-colors hover:text-primary"
               >
-                Jobb
+                Rekrytering
               </Link>
               <Link
                 href="/candidates"
@@ -64,7 +70,7 @@ export function Navbar() {
           )}
         </div>
         <div className="flex items-center gap-4">
-          {profile?.role === "admin" && (
+          {mounted && profile?.role === "admin" && (
             <div className="hidden lg:flex items-center gap-2">
               <span className="text-xs font-semibold uppercase text-muted-foreground">Vy:</span>
               <Select
@@ -86,19 +92,23 @@ export function Navbar() {
             </div>
           )}
           <ThemeToggle />
-          {profile ? (
-            <Button variant="outline" size="sm" onClick={() => signOut()}>
-              Logga ut
-            </Button>
+          {mounted ? (
+            profile ? (
+              <Button variant="outline" size="sm" onClick={() => signOut()}>
+                Logga ut
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/login">Logga in</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/signup">Kom igång</Link>
+                </Button>
+              </div>
+            )
           ) : (
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">Logga in</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/signup">Kom igång</Link>
-              </Button>
-            </div>
+            <div className="w-20 h-8" />
           )}
         </div>
       </div>

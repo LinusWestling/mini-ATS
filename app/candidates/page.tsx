@@ -10,6 +10,9 @@ import { Plus, ArrowRight } from "lucide-react";
 
 import { Navbar } from "@/components/navbar";
 import { useAdmin } from "@/src/providers/admin-provider";
+import { PageHeader } from "@/components/layout/page-header";
+import { LoadingState } from "@/components/layout/loading-state";
+import { EmptyState } from "@/components/layout/empty-state";
 
 export default function CandidatesPage() {
   const { profile, isLoading: authLoading } = useAuth();
@@ -24,9 +27,7 @@ export default function CandidatesPage() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-muted-foreground">Laddar...</div>
-        </div>
+        <LoadingState fullPage message="Laddar kandidater..." />
       </div>
     );
   }
@@ -37,13 +38,12 @@ export default function CandidatesPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-4xl font-bold tracking-tight">Kandidater</h1>
+        <PageHeader title="Kandidater">
           <Button onClick={() => router.push("/candidates/new")}>
             <Plus className="mr-2 h-4 w-4" />
             Lägg till kandidat
           </Button>
-        </div>
+        </PageHeader>
 
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
@@ -52,18 +52,17 @@ export default function CandidatesPage() {
           </CardHeader>
           <CardContent>
             {candidatesLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Laddar kandidater...</div>
+              <LoadingState message="Laddar kandidatlista..." />
             ) : candidates.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Inga kandidater ännu</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => router.push("/candidates/new")}
-              >
-                Lägg till din första kandidat
-              </Button>
-            </div>
+              <EmptyState
+                title="Inga kandidater ännu"
+                description="Lägg till din första kandidat manuellt eller via ansökningsformuläret."
+                action={{
+                  label: "Lägg till din första kandidat",
+                  onClick: () => router.push("/candidates/new"),
+                  icon: <Plus className="h-4 w-4" />
+                }}
+              />
           ) : (
             <Table>
               <TableHeader>

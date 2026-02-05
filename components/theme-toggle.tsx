@@ -12,14 +12,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function ThemeToggle() {
+  const [mounted, setMounted] = React.useState(false);
   const { setTheme, theme } = useTheme();
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Palette className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all" />
-          <span className="sr-only">Växla tema (Nuvarande: {theme})</span>
+          <span className="sr-only">Växla tema {mounted && `(Nuvarande: ${theme})`}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

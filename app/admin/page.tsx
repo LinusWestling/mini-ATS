@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/src/hooks/use-auth";
 import { useCompanies } from "@/src/hooks/use-companies";
+import { useAdminActions } from "@/src/hooks/use-admin-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,22 +15,42 @@ import { Plus, LayoutDashboard } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { useAdmin } from "@/src/providers/admin-provider";
 import { useRouter } from "next/navigation";
+import { LoadingState } from "@/components/layout/loading-state";
 
 export default function AdminPage() {
-  const { profile } = useAuth();
-  const { companies, isLoading } = useCompanies();
+  const [mounted, setMounted] = useState(false);
+  const { profile, isLoading: authLoading } = useAuth();
+  const { companies, isLoading: companiesLoading } = useCompanies();
+  const { createCustomer, isCreating } = useAdminActions();
   const { setSelectedCompanyId } = useAdmin();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPassword, setCustomerPassword] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
+
+  if (!mounted || authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <LoadingState fullPage message="Laddar admin..." />
+      </div>
+    );
+  }
 
   if (!profile || profile.role !== "admin") {
-    return <div className="p-10 text-center">Åtkomst nekad</div>;
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="p-10 text-center">Åtkomst nekad</div>
+      </div>
+    );
   }
 
   const handleViewDashboard = (companyId: string) => {
@@ -39,26 +60,15 @@ export default function AdminPage() {
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCreating(true);
 
     try {
-      const response = await fetch("/api/admin/create-customer", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyName,
-          customerEmail,
-          customerPassword,
-          customerName,
-          adminId: profile.id,
-        }),
+      await createCustomer({
+        companyName,
+        customerEmail,
+        customerPassword,
+        customerName,
+        adminId: profile.id,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Kunde inte skapa kundkonto");
-      }
 
       toast.success("Kundkonto skapat!");
       setIsDialogOpen(false);
@@ -68,8 +78,6 @@ export default function AdminPage() {
       setCustomerName("");
     } catch (error: any) {
       toast.error(error.message || "Kunde inte skapa kundkonto");
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -155,8 +163,8 @@ export default function AdminPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Laddar företag...</div>
+            {companiesLoading ? (
+              <LoadingState message="Laddar företag..." />
             ) : (
               <Table>
                 <TableHeader>

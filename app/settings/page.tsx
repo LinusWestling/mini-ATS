@@ -14,6 +14,12 @@ import { Plus, Trash2, FileText, Loader2 } from "lucide-react";
 import { useAdmin } from "@/src/providers/admin-provider";
 import { CompanyProfile } from "@/components/settings/company-profile";
 import { RecruitmentSteps } from "@/components/settings/recruitment-steps";
+import { AutoReplySettings } from "@/components/settings/auto-reply-settings";
+import { TeamManagement } from "@/components/settings/team-management";
+import { NotificationSettings } from "@/components/settings/notification-settings";
+import { PageHeader } from "@/components/layout/page-header";
+import { LoadingState } from "@/components/layout/loading-state";
+import { EmptyState } from "@/components/layout/empty-state";
 
 export default function SettingsPage() {
   const { profile, isLoading: authLoading } = useAuth();
@@ -30,9 +36,7 @@ export default function SettingsPage() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <LoadingState fullPage message="Laddar inställningar..." />
       </div>
     );
   }
@@ -42,8 +46,10 @@ export default function SettingsPage() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto p-6 text-center">
-          <h2 className="text-2xl font-bold mb-4">Inget företag valt</h2>
-          <p className="text-muted-foreground">Välj ett företag för att hantera inställningar.</p>
+          <EmptyState
+            title="Inget företag valt"
+            description="Välj ett företag i admin-panelen för att hantera dess inställningar."
+          />
         </div>
       </div>
     );
@@ -80,14 +86,17 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container mx-auto p-6 space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight">Inställningar</h1>
-          <p className="text-muted-foreground text-lg">Hantera mallar och företagsuppgifter</p>
-        </div>
+        <PageHeader
+          title="Inställningar"
+          description="Hantera mallar och företagsuppgifter"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             <CompanyProfile companyId={effectiveCompanyId} />
+            <NotificationSettings />
+            <AutoReplySettings companyId={effectiveCompanyId} />
+            <TeamManagement companyId={effectiveCompanyId} />
             <RecruitmentSteps companyId={effectiveCompanyId} />
             
             {/* Templates List */}
@@ -98,13 +107,12 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 {templatesLoading ? (
-                  <div className="text-center py-10">Laddar mallar...</div>
+                  <LoadingState message="Laddar mallar..." />
                 ) : templates.length === 0 ? (
-                  <div className="text-center py-20 border-2 border-dashed rounded-xl">
-                    <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold">Inga mallar ännu</h3>
-                    <p className="text-muted-foreground mt-2">Skapa din första mall till höger.</p>
-                  </div>
+                  <EmptyState
+                    title="Inga mallar ännu"
+                    description="Skapa din första mall till höger för att snabba upp ditt arbete."
+                  />
                 ) : (
                   <div className="grid gap-4">
                     {templates.map((template) => (

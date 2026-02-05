@@ -12,13 +12,20 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { ArrowLeft, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/navbar";
 import Link from "next/link";
+import { LoadingState } from "@/components/layout/loading-state";
 
 export default function JobDetailPage() {
   const params = useParams();
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const jobId = params.id as string;
   const { profile, isLoading: authLoading } = useAuth();
   const { jobs, isLoading: jobsLoading } = useJobs();
@@ -30,13 +37,11 @@ export default function JobDetailPage() {
 
   const job = jobs.find((j) => j.id === jobId);
 
-  if (authLoading || jobsLoading) {
+  if (!mounted || authLoading || jobsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-muted-foreground">Laddar...</div>
-        </div>
+        <LoadingState fullPage message="Laddar jobbinformation..." />
       </div>
     );
   }
@@ -130,7 +135,7 @@ export default function JobDetailPage() {
                   <div>
                     <CardTitle className="text-3xl font-bold tracking-tight mb-1">{job.title}</CardTitle>
                     <CardDescription className="text-lg">
-                      {job.company?.name} • Publicerat {new Date(job.created_at).toLocaleDateString()}
+                      {job.company?.name} • Publicerat {mounted ? new Date(job.created_at).toLocaleDateString() : "..."}
                     </CardDescription>
                   </div>
                 </div>

@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/src/lib/supabase/client";
-import type { Job } from "@/src/lib/types/database";
+import type { Job, Company } from "@/src/lib/types/database";
 
 export function useJobs(companyId?: string) {
   const supabase = createClient();

@@ -34,6 +34,20 @@ export function useAuth() {
     enabled: !!user,
   });
 
+  const signInMutation = useMutation({
+    mutationFn: async ({ email, password }: { email: string, password: string }) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
+    },
+  });
+
   const signOutMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.auth.signOut();
@@ -51,6 +65,8 @@ export function useAuth() {
     isLoading: userLoading || (!!user && profileLoading),
     isAdmin: profile?.role === "admin",
     isCustomer: profile?.role === "customer",
+    signIn: signInMutation.mutateAsync,
+    isLoggingIn: signInMutation.isPending,
     signOut: signOutMutation.mutate,
   };
 }

@@ -93,6 +93,17 @@ export default function ApplyPage() {
       if (submitError) throw submitError;
 
       toast.success("Din ansökan har skickats!");
+      
+      // Simulate auto-reply email
+      if (job.company?.auto_reply_enabled) {
+        setTimeout(() => {
+          toast.info(`E-post skickat: "${job.company?.auto_reply_subject}"`, {
+            description: "Ett automatiskt svarsmeddelande har skickats till din e-postadress.",
+            duration: 5000,
+          });
+        }, 1500);
+      }
+
       router.push("/");
     } catch (error: any) {
       console.error("Apply error full:", error);

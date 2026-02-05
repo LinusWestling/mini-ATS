@@ -6,9 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, ArrowRight, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const { jobs, isLoading } = useJobs();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,7 +94,7 @@ export default function Home() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(job.created_at).toLocaleDateString()}
+                            {mounted ? new Date(job.created_at).toLocaleDateString() : "..."}
                           </span>
                         </div>
                         <Button variant="ghost" size="sm" className="group-hover:translate-x-1 transition-transform" asChild>
