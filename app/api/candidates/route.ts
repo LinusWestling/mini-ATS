@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   const result = CandidateSchema.safeParse(body);
 
   if (!result.success) {
-    return apiError(result.error.errors[0].message);
+    return apiError(result.error.issues[0].message);
   }
 
   // SECURITY: Ensure user is inserting for their own company

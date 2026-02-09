@@ -1,97 +1,71 @@
 # Mini-ATS 🚀
 
-Mini-ATS is a modern, client-heavy SaaS application for Applicant Tracking. Built with Next.js 16 and Supabase, it provides a seamless experience for recruiters to manage job postings and candidates, while offering a smooth application flow for job seekers.
+Mini-ATS is a modern, high-security SaaS application for Applicant Tracking. Built with Next.js 16 and Supabase, it provides a robust platform for recruiters to manage the entire hiring lifecycle—from Kravprofil and AI-assisted job ads to structured interviews and candidate comparison.
 
 ## ✨ Features
 
-### 👤 For Candidates
-- **Public Job Board:** View all active job listings from various companies.
-- **Easy Application:** Submit applications with contact details and CV uploads (PDF/Word) without needing an account.
-- **Company Branding:** Job details pages reflect the company's unique branding and "About Us" information.
+### 👤 For Candidates & Public
+- **Public Job Feed:** Browse active openings across all companies without logging in.
+- **Seamless Application:** Direct apply flow with contact details and CV uploads (PDF/Word).
+- **Branded Experience:** Job pages adapt to the hiring company's visual identity.
 
-### 💼 For Recruiters
-- **Self-Service Signup:** Easy registration for new companies.
-- **Job Management:** Create and manage job postings with rich descriptions, location, and salary details.
-- **Dynamic Kanban Board:** Track candidate progress through customizable recruitment steps.
-- **Settings & Customization:**
-  - **Recruitment Steps:** Tailor the hiring pipeline with drag-and-drop step management.
-  - **Company Profile:** Manage branding, logos, and company descriptions.
-  - **Job Templates:** Save time with reusable job description templates.
+### 💼 For Recruiters (BFF Architecture)
+- **Unified Workflow:** 6-step recruitment wizard (Kravprofil -> Job Ad -> Automation -> Team -> Notifications -> Interviews).
+- **Structured Interviews:** Design interview templates, log scores, and generate candidate comparisons.
+- **Dynamic Kanban:** Manage candidates with drag-and-drop ease through custom recruitment steps.
+- **Secure Onboarding:** Self-service company registration and secure team invitation system.
 
 ### 🔑 For Admins
-- **Global Management:** Oversee all companies and users from a central admin panel.
-- **Impersonation Mode:** Seamlessly switch views to see the platform as any specific company for support and management.
+- **Global Control:** Centralized management of all companies, users, and global data.
+- **Admin View-As:** Impersonation capabilities to view and manage the platform as any specific company.
 
-### 🎨 Design & UX
-- **Multi-Theme Support:** Choose between three modern themes using OKLCH colors:
-  - **Indigo:** Professional dark mode.
-  - **Bright:** Clean and minimalist light mode.
-  - **Vibrant:** Energetic and colorful.
-- **Responsive Design:** Fully functional across desktop and mobile devices.
+## 🛡️ Security & Architecture
+
+The project follows a **Backend for Frontend (BFF)** pattern to maximize security and data integrity:
+
+- **Next.js API Routes:** All data mutations and sensitive fetches pass through a server-side API layer (`app/api/`).
+- **Input Validation:** Robust schema validation using **Zod** on all POST/PUT operations to prevent injection and mass-assignment.
+- **Identity Forwarding:** API routes utilize `createServerClient` (Supabase SSR) to forward user sessions, ensuring Row Level Security (RLS) remains the primary firewall.
+- **Tenant Isolation:** Automatic company-scoping at both the API and Database levels.
+- **Public Read Access:** Explicitly enabled for Job Posts to support the public board, while keeping internal data (Interviews, Candidates, etc.) strictly private.
 
 ## 🛠 Tech Stack
 
 - **Frontend:** Next.js 16 (App Router), TypeScript, Tailwind CSS v4, shadcn/ui.
-- **Backend:** Supabase (PostgreSQL, Auth, Storage).
-- **State Management:** React Query for efficient server state handling.
-- **Theming:** `next-themes` with custom OKLCH color palettes.
-- **Data Security:** Row Level Security (RLS) and Edge Runtime proxies for robust authorization.
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- A Supabase project
-
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd mini-ats
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-### Environment Setup
-Create a `.env` file in the root directory:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_publishable_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-
-### Database Setup
-1. Run the migration files located in `supabase/migrations/` in your Supabase SQL Editor to set up the schema, RLS policies, and functions.
-2. Ensure you have the `cvs` bucket created in Supabase Storage.
-
-### Run the App
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) to see the application.
-
-## 🏗 Architecture
-
-- **Authentication:** Managed via Supabase SSR with cross-platform session persistence.
-- **Authorization:** Handled through Supabase RLS and `proxy.ts` (Edge Runtime).
-- **CV Storage:** Supabase Storage (`cvs` bucket) for candidate documents.
-- **Application Flow:** Atomic `submit_application` RPC function for RLS-safe public applications.
-- **Admin Impersonation:** Global `AdminProvider` with `localStorage` persistence.
+- **Backend:** Supabase (Postgres, Auth, Storage, RLS).
+- **State Management:** React Query (Server State) & Custom Hooks (Data Layer).
+- **Validation:** Zod (Schema-based validation).
+- **Theming:** `next-themes` with custom OKLCH color palettes (Indigo, Bright, Vibrant).
 
 ## 📁 Project Structure
 
 ```text
-app/            # Next.js App Router (Admin, Dashboard, Jobs, etc.)
-components/     # Shared UI and feature-specific components
+app/
+  api/          # Backend logic (BFF Pattern)
+  dashboard/    # Recruiter main interface
+  admin/        # Global admin panel
+  jobs/         # Public job board and application flow
 src/
-  hooks/        # React Query custom hooks
-  lib/          # Supabase client and shared utilities
-  providers/    # Context providers (Auth, Admin, Query)
+  hooks/        # API-consuming hooks (Middle Layer)
+  lib/
+    validation/ # Zod Schemas
+    supabase/   # Server & Client configurations
+  providers/    # Auth, Admin, and Query contexts
 supabase/
-  migrations/   # SQL migration files
+  migrations/   # SQL Schema & RLS Policies
 ```
 
+## 🚀 Getting Started
+
+1. **Install Dependencies**: `npm install`
+2. **Setup .env**:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   SUPABASE_SERVICE_ROLE_KEY=...
+   ```
+3. **Database**: Run migrations in `supabase/migrations/` in order.
+4. **Development**: `npm run dev`
+
 ---
-Built with ❤️ by the Mini-ATS Team.
+Built for performance, security, and developer productivity.
