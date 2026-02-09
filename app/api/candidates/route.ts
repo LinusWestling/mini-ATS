@@ -1,38 +1,57 @@
 import { createClient } from "@/src/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedUser, apiError } from "@/src/lib/api-utils";
+import { CandidateSchema } from "@/src/lib/validation/schemas";
 
 export async function GET(request: NextRequest) {
+  const { profile, status, error } = await getAuthenticatedUser();
+  if (error || !profile) return apiError(error || "Unauthorized", status);
+
   const supabase = await createClient();
   const searchParams = request.nextUrl.searchParams;
   const companyId = searchParams.get("companyId");
 
-  let query = supabase.from("candidates").select("*").order("created_at", { ascending: false });
+  // SECURITY: Enforce tenant scoping
+  const effectiveCompanyId = profile.role === "admin" ? (companyId || profile.company_id) : profile.company_id;
 
-  if (companyId) {
-    query = query.eq("company_id", companyId);
-  }
+  const { data, error: dbError } = await supabase
+    .from("candidates")
+    .select("*")
+    .eq("company_id", effectiveCompanyId)
+    .order("created_at", { ascending: false });
 
-  const { data, error } = await query;
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (dbError) {
+    return apiError(dbError.message, 500);
   }
 
   return NextResponse.json(data);
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const body = await request.json();
+  const { profile, status, error } = await getAuthenticatedUser();
+  if (error || !profile) return apiError(error || "Unauthorized", status);
 
-  const { data, error } = await supabase
+  const body = await request.json();
+  const result = CandidateSchema.safeParse(body);
+
+  if (!result.success) {
+    return apiError(result.error.errors[0].message);
+  }
+
+  // SECURITY: Ensure user is inserting for their own company
+  if (profile.role !== "admin" && result.data.company_id !== profile.company_id) {
+    return apiError("Unauthorized: Cannot create candidate for another company", 403);
+  }
+
+  const supabase = await createClient();
+  const { data, error: dbError } = await supabase
     .from("candidates")
-    .insert(body)
+    .insert(result.data)
     .select()
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (dbError) {
+    return apiError(dbError.message, 500);
   }
 
   return NextResponse.json(data);

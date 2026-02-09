@@ -29,22 +29,21 @@ export function TeamManagement({ companyId }: TeamManagementProps) {
     e.preventDefault();
     setIsInviting(true);
 
-    try {
-      createInvite(
-        { email, role: "customer" },
-        {
-          onSuccess: () => {
-            toast.success(`Inbjudan skickad till ${email}`);
-            setEmail("");
-          },
-          onError: (error: any) => {
-            toast.error(error.message || "Kunde inte skicka inbjudan.");
-          },
+    createInvite(
+      { email, role: "customer" },
+      {
+        onSuccess: () => {
+          toast.success(`Inbjudan skickad till ${email}`);
+          setEmail("");
+        },
+        onError: (error: any) => {
+          toast.error(error.message || "Kunde inte skicka inbjudan.");
+        },
+        onSettled: () => {
+          setIsInviting(false);
         }
-      );
-    } finally {
-      setIsInviting(false);
-    }
+      }
+    );
   };
 
   const handleDeleteInvite = async (id: string) => {

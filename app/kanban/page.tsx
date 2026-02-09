@@ -275,10 +275,14 @@ export default function KanbanPage() {
     // If dropped over a column (droppable) or another card
     let newStatus = over.id as string;
     
-    // Check if we dropped on a column droppable
+    // Check if we dropped on a column droppable (the empty area)
     if (over.data.current?.type === 'ColumnDroppable') {
        newStatus = (over.data.current.status as RecruitmentStep).value;
     } 
+    // Check if we dropped on the Column sortable node (header/outer container)
+    else if (over.data.current?.type === 'Column') {
+       newStatus = (over.data.current.step as RecruitmentStep).value;
+    }
     // If dropped on another card, find the column/status of that card
     else if (over.data.current?.type === 'Card') {
        // We can't easily get status from the card id alone without looking it up, 

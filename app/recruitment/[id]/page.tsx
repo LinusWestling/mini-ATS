@@ -40,6 +40,7 @@ export default function EditRecruitmentPage() {
   const [step, setStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingProcess, setIsLoadingProcess] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [viewMode, setViewMode] = useState<"wizard" | "summary">("summary");
   
   // Form State
@@ -73,7 +74,7 @@ export default function EditRecruitmentPage() {
   }, []);
 
   useEffect(() => {
-    if (processes.length > 0 && processId) {
+    if (processes.length > 0 && processId && !isInitialized) {
       const process = processes.find(p => p.id === processId);
       if (process) {
         setRoleName(process.role_name);
@@ -89,10 +90,11 @@ export default function EditRecruitmentPage() {
           setViewMode("wizard");
         }
         
+        setIsInitialized(true);
         setIsLoadingProcess(false);
       }
     }
-  }, [processes, processId]);
+  }, [processes, processId, isInitialized]);
 
   const handleAddInterview = () => {
     if (!newIntTitle) return;
