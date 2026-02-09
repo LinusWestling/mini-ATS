@@ -1,38 +1,38 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@/src/lib/supabase/client";
 import type { Candidate } from "@/src/lib/types/database";
 
 export function useCandidates(companyId?: string) {
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   const { data: candidates, isLoading } = useQuery({
     queryKey: ["candidates", companyId],
     queryFn: async () => {
-      let query = supabase.from("candidates").select("*").order("created_at", { ascending: false });
+      const params = new URLSearchParams();
+      if (companyId) params.append("companyId", companyId);
       
-      if (companyId) {
-        query = query.eq("company_id", companyId);
+      const res = await fetch(`/api/candidates?${params}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to fetch candidates");
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Candidate[];
+      return res.json() as Promise<Candidate[]>;
     },
   });
 
   const createCandidateMutation = useMutation({
     mutationFn: async (candidate: Omit<Candidate, "id" | "created_at">) => {
-      const { data, error } = await supabase
-        .from("candidates")
-        .insert(candidate)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Candidate;
+      const res = await fetch("/api/candidates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(candidate),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create candidate");
+      }
+      return res.json() as Promise<Candidate>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
@@ -41,15 +41,16 @@ export function useCandidates(companyId?: string) {
 
   const updateCandidateMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Candidate> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("candidates")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Candidate;
+      const res = await fetch(`/api/candidates/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update candidate");
+      }
+      return res.json() as Promise<Candidate>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
@@ -58,12 +59,13 @@ export function useCandidates(companyId?: string) {
 
   const deleteCandidateMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("candidates")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
+      const res = await fetch(`/api/candidates/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete candidate");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });

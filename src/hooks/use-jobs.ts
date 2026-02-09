@@ -1,41 +1,38 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@/src/lib/supabase/client";
 import type { Job, Company } from "@/src/lib/types/database";
 
 export function useJobs(companyId?: string) {
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   const { data: jobs, isLoading } = useQuery({
     queryKey: ["jobs", companyId],
     queryFn: async () => {
-      let query = supabase.from("jobs").select(`
-        *,
-        company:companies(*)
-      `).order("created_at", { ascending: false });
+      const params = new URLSearchParams();
+      if (companyId) params.append("companyId", companyId);
       
-      if (companyId) {
-        query = query.eq("company_id", companyId);
+      const res = await fetch(`/api/jobs?${params}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to fetch jobs");
       }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as (Job & { company: Company })[];
+      return res.json() as Promise<(Job & { company: Company })[]>;
     },
   });
 
   const createJobMutation = useMutation({
     mutationFn: async (job: Omit<Job, "id" | "created_at">) => {
-      const { data, error } = await supabase
-        .from("jobs")
-        .insert(job)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Job;
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(job),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create job");
+      }
+      return res.json() as Promise<Job>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
@@ -44,15 +41,16 @@ export function useJobs(companyId?: string) {
 
   const updateJobMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Job> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("jobs")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as Job;
+      const res = await fetch(`/api/jobs/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update job");
+      }
+      return res.json() as Promise<Job>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
@@ -61,12 +59,13 @@ export function useJobs(companyId?: string) {
 
   const deleteJobMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("jobs")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
+      const res = await fetch(`/api/jobs/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete job");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });

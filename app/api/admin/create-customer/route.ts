@@ -1,12 +1,33 @@
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/src/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { companyName, customerEmail, customerPassword, customerName, adminId } = body;
+    const { companyName, customerEmail, customerPassword, customerName } = body;
 
-    // Use service role key for admin operations
+    // 1. Verify the caller is an authenticated ADMIN using their cookie
+    // We use a standard server client for this (respects Auth & RLS)
+    const supabaseCaller = await createServerClient();
+    const { data: { user: callerUser }, error: userError } = await supabaseCaller.auth.getUser();
+
+    if (userError || !callerUser) {
+      return NextResponse.json({ error: "Unauthorized: No session" }, { status: 401 });
+    }
+
+    const { data: adminProfile } = await supabaseCaller
+      .from("profiles")
+      .select("role")
+      .eq("id", callerUser.id)
+      .single();
+
+    if (adminProfile?.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized: Not an admin" }, { status: 403 });
+    }
+
+    // 2. Perform the privileged operation using Service Role
+    // (Only reachable if step 1 passes)
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -17,17 +38,6 @@ export async function POST(request: NextRequest) {
         },
       }
     );
-
-    // Verify admin
-    const { data: adminProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("role")
-      .eq("id", adminId)
-      .single();
-
-    if (adminProfile?.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
 
     // Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -51,7 +61,7 @@ export async function POST(request: NextRequest) {
     } else {
       const { data: newCompany, error: companyError } = await supabaseAdmin
         .from("companies")
-        .insert({ name: companyName, created_by: adminId })
+        .insert({ name: companyName, created_by: callerUser.id })
         .select()
         .single();
 

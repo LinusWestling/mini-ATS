@@ -1,49 +1,39 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@/src/lib/supabase/client";
 import type { Application, ApplicationStatus } from "@/src/lib/types/database";
 
 export function useApplications(jobId?: string, companyId?: string) {
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   const { data: applications, isLoading } = useQuery({
     queryKey: ["applications", jobId, companyId],
     queryFn: async () => {
-      let query = supabase
-        .from("applications")
-        .select(`
-          *,
-          job:jobs(*),
-          candidate:candidates(*)
-        `)
-        .order("created_at", { ascending: false });
-      
-      if (jobId) {
-        query = query.eq("job_id", jobId);
-      }
+      const params = new URLSearchParams();
+      if (jobId) params.append("jobId", jobId);
+      if (companyId) params.append("companyId", companyId);
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Application[];
+      const res = await fetch(`/api/applications?${params}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to fetch applications");
+      }
+      return res.json() as Promise<Application[]>;
     },
   });
 
   const createApplicationMutation = useMutation({
     mutationFn: async (application: Omit<Application, "id" | "created_at" | "job" | "candidate">) => {
-      const { data, error } = await supabase
-        .from("applications")
-        .insert(application)
-        .select(`
-          *,
-          job:jobs(*),
-          candidate:candidates(*)
-        `)
-        .single();
-      
-      if (error) throw error;
-      return data as Application;
+      const res = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(application),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create application");
+      }
+      return res.json() as Promise<Application>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
@@ -52,19 +42,16 @@ export function useApplications(jobId?: string, companyId?: string) {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: ApplicationStatus }) => {
-      const { data, error } = await supabase
-        .from("applications")
-        .update({ status })
-        .eq("id", id)
-        .select(`
-          *,
-          job:jobs(*),
-          candidate:candidates(*)
-        `)
-        .single();
-      
-      if (error) throw error;
-      return data as Application;
+      const res = await fetch(`/api/applications/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update application status");
+      }
+      return res.json() as Promise<Application>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
@@ -73,12 +60,13 @@ export function useApplications(jobId?: string, companyId?: string) {
 
   const deleteApplicationMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("applications")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
+      const res = await fetch(`/api/applications/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete application");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });

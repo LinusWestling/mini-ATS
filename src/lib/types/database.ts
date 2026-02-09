@@ -65,6 +65,7 @@ export interface Candidate {
   email: string | null;
   phone: string | null;
   cv_url?: string | null;
+  extra_fields?: { label: string, value: string }[];
   created_at: string;
 }
 
