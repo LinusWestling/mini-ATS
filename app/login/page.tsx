@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/src/hooks/use-auth";
 import { toast } from "sonner";
+import { Briefcase } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -36,7 +38,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 gap-8">
+      <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <Briefcase className="h-8 w-8 text-primary" />
+        <span className="text-2xl font-bold tracking-tight">Mini-ATS</span>
+      </Link>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Logga in</CardTitle>

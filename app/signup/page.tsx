@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/src/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,55 +18,28 @@ export default function SignupPage() {
   const [companyName, setCompanyName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // 1. Sign up user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-          }
-        }
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+          companyName,
+        }),
       });
 
-      if (authError) {
-        if (authError.message.includes("rate limit")) {
-          throw new Error("För många försök. Vänta en stund eller ändra inställningarna i Supabase Dashboard (Authentication > Settings > Rate Limits).");
-        }
-        throw authError;
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Registrering misslyckades");
       }
-      if (!authData.user) throw new Error("Kunde inte skapa konto.");
-
-      // 2. Create Company
-      const { data: company, error: companyError } = await supabase
-        .from("companies")
-        .insert({
-          name: companyName,
-          created_by: authData.user.id
-        })
-        .select()
-        .single();
-
-      if (companyError) throw companyError;
-
-      // 3. Create Profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: authData.user.id,
-          company_id: company.id,
-          role: "customer",
-          name: name
-        });
-
-      if (profileError) throw profileError;
 
       toast.success("Konto skapat! Du kan nu logga in.");
       router.push("/login");

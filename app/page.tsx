@@ -74,7 +74,9 @@ export default function Home() {
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                          {job.title}
+                          <Link href={`/jobs/${job.id}`} className="hover:underline underline-offset-4 decoration-primary/30">
+                            {job.title}
+                          </Link>
                         </CardTitle>
                       </div>
                       <CardDescription className="flex items-center gap-2 mt-2">

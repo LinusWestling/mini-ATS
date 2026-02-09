@@ -1,11 +1,9 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@/src/lib/supabase/client";
 import type { RecruitmentStep } from "@/src/lib/types/database";
 
 export function useRecruitmentSteps(companyId?: string) {
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   const { data: steps, isLoading } = useQuery({
@@ -13,14 +11,12 @@ export function useRecruitmentSteps(companyId?: string) {
     queryFn: async () => {
       if (!companyId) return [];
       
-      const { data, error } = await supabase
-        .from("recruitment_steps")
-        .select("*")
-        .eq("company_id", companyId)
-        .order("order", { ascending: true });
-      
-      if (error) throw error;
-      return data as RecruitmentStep[];
+      const res = await fetch(`/api/recruitment-steps?companyId=${companyId}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to fetch recruitment steps");
+      }
+      return res.json() as Promise<RecruitmentStep[]>;
     },
     enabled: !!companyId,
   });
@@ -28,16 +24,19 @@ export function useRecruitmentSteps(companyId?: string) {
   const updateStepsOrderMutation = useMutation({
     mutationFn: async (newSteps: RecruitmentStep[]) => {
       const updates = newSteps.map((step, index) => ({
-        id: step.id,
+        ...step,
         order: index,
-        company_id: step.company_id, // required for RLS policies sometimes
       }));
 
-      const { error } = await supabase
-        .from("recruitment_steps")
-        .upsert(updates, { onConflict: "id" });
-
-      if (error) throw error;
+      const res = await fetch("/api/recruitment-steps/order", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to update steps order");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recruitment-steps"] });
@@ -46,14 +45,16 @@ export function useRecruitmentSteps(companyId?: string) {
 
   const createStepMutation = useMutation({
     mutationFn: async (step: Omit<RecruitmentStep, "id" | "created_at" | "is_system">) => {
-      const { data, error } = await supabase
-        .from("recruitment_steps")
-        .insert(step)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data as RecruitmentStep;
+      const res = await fetch("/api/recruitment-steps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(step),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to create recruitment step");
+      }
+      return res.json() as Promise<RecruitmentStep>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recruitment-steps"] });
@@ -62,12 +63,13 @@ export function useRecruitmentSteps(companyId?: string) {
 
   const deleteStepMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("recruitment_steps")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
+      const res = await fetch(`/api/recruitment-steps/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to delete recruitment step");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recruitment-steps"] });

@@ -22,14 +22,13 @@ export function useAuth() {
     queryKey: ["auth", "profile", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      
-      if (error) throw error;
-      return data as Profile | null;
+      const res = await fetch("/api/auth/me");
+      if (!res.ok) {
+        // If 401, it means we might have a user session in client but cookies are out of sync or invalid
+        if (res.status === 401) return null;
+        throw new Error("Failed to fetch profile");
+      }
+      return res.json() as Promise<Profile>;
     },
     enabled: !!user,
   });
@@ -45,6 +44,7 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
+      queryClient.invalidateQueries({ queryKey: ["companies"] }); // Refresh data that might depend on auth
     },
   });
 
