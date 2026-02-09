@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const result = JobSchema.partial().safeParse(body);
 
   if (!result.success) {
-    return apiError(result.error.errors[0].message);
+    return apiError(result.error.issues[0].message);
   }
 
   const supabase = await createClient();
