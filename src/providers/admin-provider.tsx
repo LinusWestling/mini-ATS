@@ -15,6 +15,14 @@ const AdminContext = createContext<AdminContextType>({
 
 export const useAdmin = () => useContext(AdminContext);
 
+const isValidUuid = (id: string | null) => {
+  if (!id) return false;
+  const trimmed = id.trim();
+  if (trimmed === "all" || trimmed === "") return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(trimmed);
+};
+
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -28,24 +36,33 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     const urlParam = searchParams.get("viewAs");
     
     if (urlParam) {
-      setSelectedCompanyIdState(urlParam);
-      localStorage.setItem("admin_view_as", urlParam);
+      if (isValidUuid(urlParam)) {
+        setSelectedCompanyIdState(urlParam.trim());
+        localStorage.setItem("admin_view_as", urlParam.trim());
+      } else if (urlParam === "all") {
+        setSelectedCompanyIdState(null);
+        localStorage.removeItem("admin_view_as");
+      }
     } else if (stored) {
-      setSelectedCompanyIdState(stored);
-      // Sync URL with stored preference if we're on a route that might need it
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("viewAs", stored);
-      router.replace(`${pathname}?${params.toString()}`);
+      if (isValidUuid(stored)) {
+        setSelectedCompanyIdState(stored.trim());
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("viewAs", stored.trim());
+        router.replace(`${pathname}?${params.toString()}`);
+      } else {
+        localStorage.removeItem("admin_view_as");
+      }
     }
   }, []);
 
   const setSelectedCompanyId = (id: string | null) => {
-    setSelectedCompanyIdState(id);
+    const targetId = isValidUuid(id) ? id!.trim() : null;
+    setSelectedCompanyIdState(targetId);
     const params = new URLSearchParams(searchParams.toString());
     
-    if (id) {
-      localStorage.setItem("admin_view_as", id);
-      params.set("viewAs", id);
+    if (targetId) {
+      localStorage.setItem("admin_view_as", targetId);
+      params.set("viewAs", targetId);
     } else {
       localStorage.removeItem("admin_view_as");
       params.delete("viewAs");
@@ -56,16 +73,21 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   // Sync state with URL changes (e.g. back button)
   useEffect(() => {
     const viewAs = searchParams.get("viewAs");
+    
     if (viewAs && viewAs !== selectedCompanyId) {
-      setSelectedCompanyIdState(viewAs);
-      localStorage.setItem("admin_view_as", viewAs);
+      if (isValidUuid(viewAs)) {
+        setSelectedCompanyIdState(viewAs.trim());
+        localStorage.setItem("admin_view_as", viewAs.trim());
+      } else if (viewAs === "all") {
+        setSelectedCompanyIdState(null);
+        localStorage.removeItem("admin_view_as");
+      }
     } else if (!viewAs && selectedCompanyId) {
-      // If URL is cleared but we have state, sync URL
       const params = new URLSearchParams(searchParams.toString());
       params.set("viewAs", selectedCompanyId);
       router.replace(`${pathname}?${params.toString()}`);
     }
-  }, [searchParams]);
+  }, [searchParams, selectedCompanyId]);
 
   return (
     <AdminContext.Provider value={{ selectedCompanyId, setSelectedCompanyId }}>

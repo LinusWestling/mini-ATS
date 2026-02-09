@@ -10,17 +10,40 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const searchParams = request.nextUrl.searchParams;
   const companyId = searchParams.get("companyId");
+  const isValidUuid = companyId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
 
   // SECURITY: Enforce tenant scoping
-  const effectiveCompanyId = profile.role === "admin" ? (companyId || profile.company_id) : profile.company_id;
+  // For admins, if no companyId is provided, we should probably return all or empty list.
+  
+  if (profile.role === "admin") {
+    let query = supabase.from("candidates").select("*").order("created_at", { ascending: false });
+    
+    if (isValidUuid) {
+      query = query.eq("company_id", companyId);
+    } 
+    // If not a valid UUID (like "all" or missing), we return all candidates for admins
+
+    const { data, error: dbError } = await query;
+    if (dbError) {
+      console.error("GET candidates (admin) error:", dbError);
+      return apiError(dbError.message, 500);
+    }
+    return NextResponse.json(data);
+  }
+
+  // Regular user: strictly scoped to their company
+  if (!profile.company_id) {
+    return NextResponse.json([]);
+  }
 
   const { data, error: dbError } = await supabase
     .from("candidates")
     .select("*")
-    .eq("company_id", effectiveCompanyId)
+    .eq("company_id", profile.company_id)
     .order("created_at", { ascending: false });
 
   if (dbError) {
+    console.error("GET candidates (user) error:", dbError);
     return apiError(dbError.message, 500);
   }
 
@@ -35,6 +58,7 @@ export async function POST(request: NextRequest) {
   const result = CandidateSchema.safeParse(body);
 
   if (!result.success) {
+    console.error("POST candidate validation error:", result.error.format());
     return apiError(result.error.issues[0].message);
   }
 
@@ -51,6 +75,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (dbError) {
+    console.error("POST candidate DB error:", dbError);
     return apiError(dbError.message, 500);
   }
 

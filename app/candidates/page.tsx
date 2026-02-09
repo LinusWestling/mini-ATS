@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
-import { Plus, ArrowRight, Search, Trash2 } from "lucide-react";
+import { Plus, ArrowRight, Search, Trash2, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -144,6 +144,13 @@ export default function CandidatesPage() {
                             Visa
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
+                          {candidate.cv_url && (
+                            <Button variant="ghost" size="icon" asChild title="Se CV">
+                              <a href={candidate.cv_url} target="_blank" rel="noopener noreferrer">
+                                <FileText className="h-4 w-4 text-primary" />
+                              </a>
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
